@@ -102,6 +102,7 @@ public:
     //template <size_t M> ValueType& operator[](const std::array<size_t,M>& in);
     /** Returns the _data Container. */
     Container<ValueType, sizeof...(GridTypes)>& getData(){return _data;};
+    //const Container<ValueType, sizeof...(GridTypes)>& getData() const {return _data;};
     /** Fills the Container with a provided function. */
     template <typename ...ArgTypes> void fill(const std::function<ValueType(ArgTypes...)> &);
     void fill(const FunctionType &in);

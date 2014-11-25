@@ -117,17 +117,17 @@ inline std::tuple <bool, size_t, RealType> MatsubaraGrid<F>::find (ComplexType i
 {
     int n=getNumber(in);
     #ifndef NDEBUG
-    DEBUG("Invoking matsubara find");
+    //DEBUG("Invoking matsubara find");
     #endif
     if (n<_w_min) { 
         #ifndef NDEBUG
-        ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); 
+        //ERROR("Frequency to find is out of bounds, " << in << "<" << FMatsubara(_w_min,_beta)); 
         #endif
         return std::make_tuple(0,0,0); 
         };
     if (n>=_w_max) { 
         #ifndef NDEBUG
-        ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); 
+        //ERROR("Frequency to find is out of bounds, " << in << ">" << FMatsubara(_w_max,_beta)); 
         #endif
         return std::make_tuple(0,vals_.size(),0); 
         };
@@ -159,7 +159,7 @@ inline auto MatsubaraGrid<F>::getValue(Obj &in, MatsubaraGrid::point x) const ->
     return in[x.index_];
     else { 
         #ifndef NDEBUG
-        ERROR ("Point not found"); 
+        //ERROR ("Point not found"); 
         #endif
         return this->getValue(in, ComplexType(x)); 
          };

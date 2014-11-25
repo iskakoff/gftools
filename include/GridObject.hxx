@@ -163,7 +163,7 @@ inline ValueType GridObject<ValueType,GridTypes...>::operator()(const ArgTypes&.
     //catch (std::exception &e) { 
     catch (...) { 
         #ifndef NDEBUG
-        DEBUG("Using analytical expression");
+        //DEBUG("Using analytical expression");
         #endif
         return _f(in...);
      };
