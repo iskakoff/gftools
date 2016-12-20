@@ -15,5 +15,9 @@ protected:
     std::string s_; 
 };
 
-}
+class unimplemented_function_exception : public ex_generic {
+public:
+  unimplemented_function_exception(std::string s):ex_generic(s) {};
+};
 
+}

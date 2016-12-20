@@ -32,17 +32,19 @@ include(UseDoxygen)
 find_package (Eigen3 3.1)
 message(STATUS "Eigen3 includes: " ${EIGEN3_INCLUDE_DIR} )
 # Boost
-find_package (Boost) 
+find_package (Boost)
+find_package(ALPSCore)
 
 include_directories(
     ${EIGEN3_INCLUDE_DIR}
     #${EIGEN3_INCLUDE_DIR}/unsupported
     ${Boost_INCLUDE_DIRS}
-    ./gftools
+    ${ALPSCore_INCLUDES}
+    ${GFTools_SOURCE_DIR}/gftools
 )
 
 # Build and enable tests
-add_subdirectory(gftools)
+add_subdirectory(${GFTools_SOURCE_DIR}/gftools)
 option(Testing "Enable testing" OFF)
 if (Testing)
     message(STATUS "Building tests")

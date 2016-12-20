@@ -11,5 +11,5 @@ df_fk_2d
 foreach (example ${examples})
     set(example_src ${example}.cpp)
     add_executable(${example} ${example_src} $<TARGET_OBJECTS:libgftools>)
-    target_link_libraries(${example} ${Boost_LIBRARIES})
+    target_link_libraries(${example} ${Boost_LIBRARIES} ${ALPSCore_LIBRARIES})
 endforeach(example)

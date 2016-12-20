@@ -1,4 +1,7 @@
-include_directories (.)
+include_directories(${GFTools_SOURCE_DIR}/gftools)
+include_directories(${GFTools_SOURCE_DIR})
+include_directories(${Boost_INCLUDE_DIRS})
+include_directories(${ALPSCore_INCLUDES})
 
 set (base_src
     defaults.hpp
@@ -8,6 +11,9 @@ set (base_src
     matsubara_grid.hpp 
     real_grid.hpp 
     kmesh.hpp 
+    nkmesh.hpp
+    index_grid.hpp
+    hdf5.hpp
     container.hpp container.hxx
     grid_object.hpp grid_object.hxx
     )
