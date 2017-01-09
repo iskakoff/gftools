@@ -16,6 +16,7 @@ set (base_src
     hdf5.hpp
     container.hpp container.hxx
     grid_object.hpp grid_object.hxx
+    tail.hpp
     )
 
 add_library(libgftools OBJECT ${base_src})

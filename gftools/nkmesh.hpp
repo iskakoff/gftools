@@ -12,6 +12,7 @@
 #include "almost_equal.hpp"
 #include "grid_base.hpp"
 #include "exceptions.hpp"
+#include "kmesh.hpp"
 
 #include <boost/math/special_functions.hpp>
 
@@ -82,6 +83,11 @@ namespace gftools {
     ///constructor from a vector of regularly spaced ints
     nkmesh(const std::vector<point_type> & in);
 
+    ///given a double 'in', it finds that double in the grid.
+    ///The first return value is whether it has been found or not
+    ///The second return value is the index.
+    ///The third return value 'weight' measures how close the point is to a grid point
+    std::tuple <bool, size_t, point_type> find(point_type in) const ;
 
 //    template <class Obj> auto integrate(const Obj &in) const ->decltype(in(vals_[0]));
 //    template <class Obj> auto eval(Obj &in, real_type x) const ->decltype(in[0]);
@@ -92,6 +98,8 @@ namespace gftools {
     point shift(point in, real_type shift_arg) const {throw gftools::unimplemented_function_exception("Real value shift is unimplemented for multi-dimensional k-mesh;");}
     point shift(point in, point shift_arg) const { return in + shift_arg;}
   private:
+    ///
+    kmesh _1dmesh;
     ///number of equidistantly spaced points in k-space
     size_t npoints_;
     ///extent of domain in k-space, usually 2*PI
@@ -104,7 +112,7 @@ namespace gftools {
   };
 
   template<int N>
-  nkmesh<N>::nkmesh(size_t n_points, real_type len) : npoints_(n_points), domain_len_(len) {
+  nkmesh<N>::nkmesh(size_t n_points, real_type len) : npoints_(n_points), domain_len_(len), _1dmesh((size_t)std::sqrt(n_points)) {
     size_t total_points = boost::math::pow<N>(n_points);
     for (size_t i = 0; i < total_points; ++i) {
       std::array<real_type, N> points;
@@ -114,7 +122,23 @@ namespace gftools {
     }
   }
   template<int N>
-  nkmesh<N>::nkmesh(const std::vector < nkmesh::point_type > &in) : base(in), npoints_(in.size()) {}
+  nkmesh<N>::nkmesh(const std::vector < typename nkmesh<N>::point_type > &in) : base(in), npoints_(in.size()), _1dmesh((size_t)std::sqrt(in.size())) {}
+
+  template<int N>
+  std::tuple < bool, size_t, typename nkmesh<N>::point_type > nkmesh<N>::find(typename nkmesh<N>::point_type in) const {
+    typename nkmesh<N>::point_type out;
+    bool found = true;
+    size_t n = 0;
+    int i = 0;
+    for(const auto & point : in.points()) {
+      std::tuple < bool, size_t, real_type > f = _1dmesh.find(point);
+      found &= std::get<0>(f);
+      n += n*N + std::get<1>(f);
+      out.points()[i] = std::get<2>(f);
+      ++i;
+    }
+    return std::make_tuple (found,n,out);
+  }
 
 }
 

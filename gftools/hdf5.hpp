@@ -16,6 +16,7 @@
 
 #include <gftools.hpp>
 #include "nkmesh.hpp"
+#include "tail.hpp"
 #include "index_grid.hpp"
 
 
@@ -49,7 +50,57 @@ namespace gftools {
     static void save (alps::hdf5::archive & ar, std::string const & path, const container<T,D>& c) {
       ar << alps::make_pvp(path, c.boost_container_()); }
   };
+// load tails
+  template <size_t D>
+  struct hdf5_loader<tail_container<D>> {
+    typedef tail_container<D> type;
+    typedef typename tail_container<D>::boost_t boost_type;
+    static type load (alps::hdf5::archive & ar, std::string const & path) {
+      std::vector<boost::multi_array<real_type, D>> x;
+      std::string descr; ar[path+"/descriptor"] >> descr;
+      if (descr!="INFINITY_TAIL") throw std::runtime_error("Wrong tail format '"+descr+"', expected INFINITY_TAIL");
+      int min_tail_order;
+      int max_tail_order;
+      /// read tail orders
+      ar[path+"/min_tail_order"]>>min_tail_order;
+      ar[path+"/max_tail_order"]>>max_tail_order;
+      /// we don't have tail. nothing to read
+      if(min_tail_order == -1) {
+        boost_type x1;
+        return tail_container_ref<D>(x1);
+      }
+      /// read tail order coefficients
+      for (int j = min_tail_order; j <= max_tail_order; ++j) {
+        boost::multi_array<real_type, D> tmp;
+        ar>>alps::make_pvp(path+"/"+boost::lexical_cast<std::string>(j), tmp);
+        x.push_back(tmp);
+      }
+      /// get shape of tail coefficents
+      std::vector<size_t> shape = alps::hdf5::detail::get_extent<boost::multi_array<real_type, D>>::apply(x[0]);
+      boost_type x1;
+      /// insert number of tail coefficients to shape array
+      shape.insert(shape.begin(), max_tail_order-min_tail_order+1);
+      /// reshape data array
+      alps::hdf5::detail::set_extent<boost_type>().apply(x1, shape);
+      /// assign each coefficients for each order
+      for(int i = 0; i<=(max_tail_order-min_tail_order); ++i) {
+        x1[i] = x[i];
+      }
+      return tail_container_ref<D>(x1, min_tail_order, max_tail_order-min_tail_order+1);
+    }
 
+    static void save (alps::hdf5::archive & ar, std::string const & path, const tail_container<D>& c) {
+      ar[path+"/descriptor"]="INFINITY_TAIL";
+      ar[path+"/min_tail_order"]=c.min_tail_order();
+      ar[path+"/max_tail_order"]=c.tail_orders() + c.min_tail_order() - 1;
+      /// we don't have tail
+      if(c.min_tail_order()==-1) return;
+
+      for (int j = 0; j < c.tail_orders(); ++j) {
+        ar<<alps::make_pvp(path+"/"+boost::lexical_cast<std::string>(j+c.min_tail_order()), c[j]);
+      }
+    }
+  };
 // grid
   template <typename Grid, typename R = Grid>
   using isGrid = typename std::enable_if<
@@ -169,12 +220,25 @@ inline isGrid<Grid, void> save(alps::hdf5::archive & ar, std::string const & pat
   };
 
 // gridobject
+  template<typename T>
+  struct data_path{
+    std::string operator()() {
+      return "/data";
+    }
+  };
+  // we have different path for tail
+  template<typename value_type, typename LT, typename ... Grids>
+  struct data_path<tail<value_type, LT, Grids...> > {
+    std::string operator()() {
+      return "/tail";
+    }
+  };
   template <typename T>
   inline void save_grid_object(alps::hdf5::archive & ar, std::string const & path, const T& c, bool plaintext = false, std::string extra_name_to_plaintext = "")
   {
     std::cout << "hdf5 : saving " << typeid(T).name() << " to " << path << std::endl;
     hdf5_grid_tuple<typename T::grid_tuple>::save(ar,path+"/grids",c.grids());
-    save(ar,path+"/data", c.data());
+    save(ar,path+data_path<T>()(), c.data());
     std::string p2(path);
     std::vector<std::string> split_vec;
     boost::algorithm::split(split_vec, path, boost::is_any_of("/"), boost::token_compress_on );
@@ -185,12 +249,12 @@ inline isGrid<Grid, void> save(alps::hdf5::archive & ar, std::string const & pat
     }
   }
 
-  template <typename T>
+  template <typename T, int N=1>
   inline T load_grid_object(alps::hdf5::archive & ar, std::string const & path) {
     std::cout << "hdf5 : loading " << typeid(T).name() << " from " << path << std::endl;
     std::string grid_path = path + (ar.is_group(path + "/grids") ? "/grids" :"/mesh");
-    auto grids = hdf5_grid_tuple < typename T::grid_tuple >::load(ar, grid_path);
-    auto data = hdf5_loader<typename T::container_type>::load(ar,path+"/data");
+    auto grids = hdf5_grid_tuple < typename T::grid_tuple, N >::load(ar, grid_path);
+    auto data = hdf5_loader<typename T::container_type>::load(ar,path+data_path<T>()());
     return T(grids,data);
   }
 } // end of namespace gftools
